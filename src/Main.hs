@@ -2,6 +2,8 @@ module Main where
 
 import Text.XML.HXT.Core
 import Text.HandsomeSoup
+import Data.List
+import Control.Monad
 
 --import Network.HTTP
 --import Text.HTML.TagSoup
@@ -11,20 +13,27 @@ import Text.HandsomeSoup
 --import Network.Curl.Download
 --import Network.Curl
 
-main1 = do
-    let doc = fromUrl "http://www.sunstar.com.ph/bisaya-news?page=1001"
+linksForPg :: Show a => a -> IO [String]
+linksForPg pg = do
+    let doc = fromUrl $ "http://www.sunstar.com.ph/bisaya-news?page=" ++ (show pg)
     rawlinks <- runX $ doc >>> css "h2 a" ! "href"
     let links = map (\ s -> "http://www.sunstar.com.ph" ++ s) rawlinks
-    mapM_ putStrLn links
+    return links
+
+linksForPgs :: Show a => [a] -> IO [String]
+linksForPgs pgs = do
+    links <- mapM linksForPg pgs
+    let links2 = foldr (++) [] links
+    return links2
 
 
-
-article = do
-    let doc = fromUrl "http://www.sunstar.com.ph/superbalita-cebu/opinyon/2014/11/28/albor-salawayong-mga-balaod-379096"
+article :: String -> IO String
+article url = do
+    let doc = fromUrl url--"http://www.sunstar.com.ph/superbalita-cebu/opinyon/2014/11/28/albor-salawayong-mga-balaod-379096"
     ps <- runX $ doc >>> css "p" >>> removeAllWhiteSpace >>> getChildren >>> getText
     let paras = filter (\s -> length s > 50) ps
     -- paragraphs <- runX . xshow $ doc >>> ( css "div[class~=base] " )
-    mapM_ putStrLn paras
+    return $ concat $ intersperse " "  paras
 
 
 
@@ -46,4 +55,4 @@ mytst = do
     where extract = dropWhile (~/= "<div id=content>")
 -}
 
-main = main1
+main = article "http://www.sunstar.com.ph/superbalita-cebu/opinyon/2014/11/28/albor-salawayong-mga-balaod-379096"
