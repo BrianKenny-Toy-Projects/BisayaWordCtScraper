@@ -13,4 +13,5 @@ cabal.config
 *.prof
 *.hp
 *.aux
-
+.idea
+*.iml
