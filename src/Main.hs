@@ -4,6 +4,7 @@ import Text.XML.HXT.Core
 import Text.HandsomeSoup
 import Data.List
 import Control.Monad
+import Data.Char
 
 --import Network.HTTP
 --import Text.HTML.TagSoup
@@ -27,32 +28,23 @@ linksForPgs pgs = do
     return links2
 
 
-article :: String -> IO String
-article url = do
+article :: Show a => (String, a) -> IO [Char]
+article (url, num) = do
+    putStrLn $ show num
     let doc = fromUrl url--"http://www.sunstar.com.ph/superbalita-cebu/opinyon/2014/11/28/albor-salawayong-mga-balaod-379096"
     ps <- runX $ doc >>> css "p" >>> removeAllWhiteSpace >>> getChildren >>> getText
     let paras = filter (\s -> length s > 50) ps
+    let str1 = concat $ intersperse " "  paras
+    let minusPunctation = map (\c -> if isAlpha c || isSpace c || (c == '-') then c else ' ') str1
     -- paragraphs <- runX . xshow $ doc >>> ( css "div[class~=base] " )
-    return $ concat $ intersperse " "  paras
+    return minusPunctation
 
-
-
--- close runX $ doc >>> css "p" >>> removeAllWhiteSpace >>> getChildren >>> getText
--- thing <- runX  $ doc2 >>>   getChildren  >>>  getText
-{-
-haskellHitCount = do
-    --src <- openURL "http://haskell.org/haskellwiki/Haskell"
-    (code, src) <- curlGetString "http://www.haskell.org/haskellwiki/Haskell" []
-    let count = fromFooter $ parseTags src
-    putStrLn $ "haskell.org has been hit " ++ count ++ " times"
-    where fromFooter = filter isDigit . innerText . take 2 . dropWhile (~/= "<li id=viewcount>")
-
-
-mytst = do
-    (code, src) <- curlGetString "http://www.sunstar.com.ph/superbalita-davao/balita/2012/01/27/mag-inahan-sikpaw-sa-ronda-202866" []
-    let str = extract $ parseTags src
-    putStrLn "hi"
-    where extract = dropWhile (~/= "<div id=content>")
--}
-
-main = article "http://www.sunstar.com.ph/superbalita-cebu/opinyon/2014/11/28/albor-salawayong-mga-balaod-379096"
+main = do
+    links <- linksForPgs [0..0]
+    let indexed = zip links [0..]
+    articles <- mapM article indexed
+    -- todo sanitize "?
+    --let text = foldr (++) [] articles
+    let text = concat $ intersperse "\n\n\n" articles
+    putStr text
+    return ""
